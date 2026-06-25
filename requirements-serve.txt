@@ -1,11 +1,8 @@
-# Runtime-only dependencies for the deployed container.
-# Deliberately excludes training/EDA deps (torch, statsbombpy, matplotlib,
-# pandas, jupyter, pytest) to keep the image small. The served XGBoost model is
-# loaded from models/baseline.joblib; unpickling it needs xgboost + sklearn.
+# Runtime-only dependencies for the deployed container — kept minimal.
+# Serving loads a raw XGBoost Booster (models/baseline.ubj) via the lightweight
+# `predictor` module, so scikit-learn / joblib / torch / pandas are NOT needed.
 fastapi
 uvicorn[standard]
 pydantic
 numpy
-scikit-learn
-xgboost
-joblib
+xgboost-cpu        # same `xgboost` module, without the ~400MB CUDA/GPU libs

@@ -3,12 +3,12 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from xg.models.baseline import MODEL_PATH
+from xg.models.predictor import BOOSTER_PATH
 from xg.scenarios import CLEAR_CHANCE, PENALTY
 
-# The API loads the model at startup; skip the whole module if it isn't trained.
+# The API loads the served booster at startup; skip if it hasn't been exported.
 pytestmark = pytest.mark.skipif(
-    not MODEL_PATH.exists(), reason="no trained model (run python -m xg.models.baseline)"
+    not BOOSTER_PATH.exists(), reason="no served model (run python -m xg.models.baseline)"
 )
 
 

@@ -1,0 +1,15 @@
+{
+  "model": "xgboost",
+  "features": [
+    "distance",
+    "angle",
+    "abs_y_offset",
+    "n_defenders",
+    "defenders_in_cone",
+    "nearest_def_dist",
+    "gk_visible",
+    "gk_dist_to_goal",
+    "gk_dist_to_shot"
+  ],
+  "penalty_xg": 0.76
+}

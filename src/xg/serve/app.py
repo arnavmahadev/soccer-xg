@@ -24,12 +24,12 @@ from pydantic import BaseModel
 FRONTEND_DIR = Path(__file__).resolve().parents[3] / "frontend"
 
 from xg.data.schema import GameState
-from xg.models.baseline import load_model, predict
+from xg.models.predictor import load, model_info, predict
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    load_model()  # warm the cache / fail fast if the model isn't trained
+    load()  # warm the cache / fail fast if the model isn't exported
     yield
 
 
@@ -52,15 +52,14 @@ class PredictResponse(BaseModel):
 
 @app.get("/health")
 def health() -> dict:
-    bundle = load_model()
-    return {"status": "ok", "model": bundle["name"], "n_features": len(bundle["features"])}
+    return {"status": "ok", **model_info()}
 
 
 @app.post("/predict", response_model=PredictResponse)
 def predict_endpoint(state: GameState, shot_type: str = "open_play") -> PredictResponse:
     """xG for a shot situation. `shot_type=penalty` returns the canonical value."""
     xg = predict(state, shot_type=shot_type)
-    return PredictResponse(xg=xg, model=load_model()["name"], shot_type=shot_type)
+    return PredictResponse(xg=xg, model=model_info()["name"], shot_type=shot_type)
 
 
 # Serve the interactive frontend at "/" (mounted last so the API routes above

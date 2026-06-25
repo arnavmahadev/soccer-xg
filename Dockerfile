@@ -13,7 +13,8 @@ RUN pip install --no-cache-dir -r requirements-serve.txt
 
 COPY src/ src/
 COPY frontend/ frontend/
-COPY models/baseline.joblib models/baseline.joblib
+COPY models/baseline.ubj models/baseline.ubj
+COPY models/serve_meta.json models/serve_meta.json
 
 ENV PYTHONPATH=/app/src
 # Hugging Face Spaces (Docker SDK) expects the app on port 7860.

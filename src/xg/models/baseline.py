@@ -14,6 +14,7 @@ Run:  python -m xg.models.baseline    (trains, evaluates, saves)
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import joblib
@@ -97,7 +98,26 @@ def train(save: bool = True) -> dict:
             MODEL_PATH,
         )
         print(f"\nSaved best model ({best}) -> {MODEL_PATH}")
+        if best == "xgboost":
+            export_for_serving(fitted[best])
     return results
+
+
+def export_for_serving(model=None) -> None:
+    """Export the served XGBoost model as a raw Booster + meta JSON, consumed by
+    the lightweight `predictor` module. Keeps the serving image free of
+    scikit-learn / joblib. Pass a fitted model, or omit to load the saved one."""
+    from xg.models.predictor import BOOSTER_PATH, META_PATH
+
+    if model is None:
+        bundle = load_model()
+        if bundle["name"] != "xgboost":
+            raise RuntimeError("serving export supports the XGBoost model only")
+        model = bundle["model"]
+    model.get_booster().save_model(str(BOOSTER_PATH))
+    META_PATH.write_text(json.dumps(
+        {"model": "xgboost", "features": FEATURE_NAMES, "penalty_xg": PENALTY_XG}, indent=2))
+    print(f"Exported serving model -> {BOOSTER_PATH.name} + {META_PATH.name}")
 
 
 # --------------------------------------------------------------------------- #
