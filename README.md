@@ -1,4 +1,3 @@
-<!-- Hugging Face Spaces config (Docker SDK). Harmless on GitHub. -->
 ---
 title: Soccer xG
 emoji: ⚽
@@ -8,6 +7,9 @@ sdk: docker
 app_port: 7860
 pinned: false
 ---
+
+<!-- The YAML block above is Hugging Face Spaces config; it must be the very
+     first thing in this file. Harmless on GitHub. -->
 
 # Soccer xG
 
