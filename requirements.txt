@@ -1,23 +1,20 @@
-# Grouped by phase so you only install what you need when you need it.
-# Phase 0 (now):
+# Core schema + tests
 pydantic
 pytest
 
-# Phase 1 — data acquisition & EDA:
-# statsbombpy
-# pandas
-# pyarrow        # parquet
-# matplotlib
-# jupyter
+# Data acquisition & EDA
+statsbombpy
+pandas
+pyarrow
+matplotlib
 
-# Phase 2-3 — features & baseline model:
-# numpy
-# scikit-learn
-# xgboost
+# Features & models
+numpy
+scikit-learn
+xgboost            # needs OpenMP at runtime (macOS: brew install libomp)
+torch              # MLP comparison (Phase 4)
 
-# Phase 4 — neural net:
-# torch
-
-# Phase 6 — API:
-# fastapi
-# uvicorn[standard]
+# API
+fastapi
+uvicorn[standard]
+httpx              # FastAPI TestClient

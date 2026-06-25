@@ -27,7 +27,7 @@ model with zero rework.
 - [x] **Phase 3** — baseline model: XGBoost, test log loss 0.263 / Brier 0.071
 - [x] **Phase 4** — MLP (0.274); XGBoost wins on small tabular data → served
 - [x] **Phase 5** — evaluation: ECE 0.027, well calibrated ([report](reports/evaluation.md))
-- [ ] Phase 6 — FastAPI prediction endpoint
+- [x] **Phase 6** — FastAPI `/predict` + `/health`, schema-validated requests
 - [ ] Phase 7 — interactive draggable-pitch frontend
 - [ ] Phase 8 — deployment (Hugging Face Spaces)
 - [ ] Stretch (post-ship only) — DeepSets net over raw player sets
@@ -38,5 +38,9 @@ model with zero rework.
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-pytest            # runs schema + known-scenario sanity checks
+pytest                                  # schema + sanity + metrics + API checks
+
+python -m xg.data.load                  # build data/processed/shots.parquet
+python -m xg.models.baseline            # train + save the served model
+uvicorn xg.serve.app:app --reload       # serve the API at http://127.0.0.1:8000/docs
 ```
