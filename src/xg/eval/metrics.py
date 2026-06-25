@@ -30,6 +30,34 @@ def brier(y_true, p_pred) -> float:
     return float(np.mean((p - y) ** 2))
 
 
+def reliability_curve(y_true, p_pred, n_bins: int = 10):
+    """Bin predictions into [0,1] slices and return, per non-empty bin, the mean
+    predicted probability, the actual goal rate, and the count. A perfectly
+    calibrated model has mean-predicted == actual-rate in every bin."""
+    y = np.asarray(y_true, dtype=float)
+    p = np.asarray(p_pred, dtype=float)
+    edges = np.linspace(0.0, 1.0, n_bins + 1)
+    idx = np.clip(np.digitize(p, edges) - 1, 0, n_bins - 1)
+    pred_mean, actual_rate, counts = [], [], []
+    for b in range(n_bins):
+        mask = idx == b
+        if mask.sum() == 0:
+            continue
+        pred_mean.append(p[mask].mean())
+        actual_rate.append(y[mask].mean())
+        counts.append(int(mask.sum()))
+    return np.array(pred_mean), np.array(actual_rate), np.array(counts)
+
+
+def ece(y_true, p_pred, n_bins: int = 10) -> float:
+    """Expected Calibration Error: count-weighted mean gap between predicted
+    probability and actual rate across bins. 0 = perfectly calibrated."""
+    pred_mean, actual_rate, counts = reliability_curve(y_true, p_pred, n_bins)
+    if counts.sum() == 0:
+        return 0.0
+    return float(np.sum(counts * np.abs(pred_mean - actual_rate)) / counts.sum())
+
+
 def summary(y_true, p_pred) -> dict[str, float]:
     """All the headline numbers for one set of predictions."""
     y = np.asarray(y_true, dtype=float)

@@ -26,7 +26,7 @@ model with zero rework.
 - [x] **Phase 2** — feature engineering (9 position-only features)
 - [x] **Phase 3** — baseline model: XGBoost, test log loss 0.263 / Brier 0.071
 - [x] **Phase 4** — MLP (0.274); XGBoost wins on small tabular data → served
-- [ ] Phase 5 — evaluation (log loss, Brier, calibration)
+- [x] **Phase 5** — evaluation: ECE 0.027, well calibrated ([report](reports/evaluation.md))
 - [ ] Phase 6 — FastAPI prediction endpoint
 - [ ] Phase 7 — interactive draggable-pitch frontend
 - [ ] Phase 8 — deployment (Hugging Face Spaces)
