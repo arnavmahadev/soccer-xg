@@ -6,6 +6,7 @@ const PITCH = { xMin: 60, xMax: 120, yMin: 0, yMax: 80 };
 const svg = document.getElementById("pitch");
 const layer = document.getElementById("markers");
 const xgValue = document.getElementById("xg-value");
+const xgPct = document.getElementById("xg-pct");
 const xgBar = document.getElementById("xg-bar");
 const statusEl = document.getElementById("status");
 
@@ -89,7 +90,11 @@ async function predict() {
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     const data = await r.json();
     xgValue.textContent = data.xg.toFixed(2);
+    xgPct.textContent = `≈ ${Math.round(data.xg * 100)}% chance to score`;
     xgBar.style.width = `${Math.min(data.xg * 100, 100)}%`;
+    // red (low) -> green (high), saturating around a near-certain chance.
+    const hue = Math.min(data.xg / 0.6, 1) * 130;
+    xgBar.style.background = `hsl(${hue}, 65%, 48%)`;
     statusEl.textContent = `model: ${data.model}`;
   } catch (e) {
     statusEl.textContent = `prediction failed: ${e.message}`;
