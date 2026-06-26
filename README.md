@@ -1,16 +1,3 @@
----
-title: Soccer xG
-emoji: ⚽
-colorFrom: green
-colorTo: blue
-sdk: docker
-app_port: 7860
-pinned: false
----
-
-<!-- The YAML block above is Hugging Face Spaces config; it must be the very
-     first thing in this file. Harmless on GitHub. -->
-
 # Soccer xG
 
 > Predict the probability a shot becomes a goal — from **player positions alone** —

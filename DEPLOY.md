@@ -2,8 +2,12 @@
 
 The app ships as one container (FastAPI + the static frontend + the committed
 `models/baseline.joblib`). Hugging Face Spaces runs the `Dockerfile` directly and
-reads the Space config from the YAML frontmatter at the top of `README.md`
-(`sdk: docker`, `app_port: 7860`).
+reads the Space config (`sdk: docker`, `app_port: 7860`) from YAML frontmatter at
+the top of `README.md`.
+
+GitHub renders that frontmatter as an ugly table, so `README.md` on `main` has
+none — the config lives in `deploy/hf-header.md` and `scripts/deploy-hf.sh`
+prepends it only for the Space push (see **Deploy** below).
 
 ## Local check (optional, needs Docker running)
 
@@ -25,11 +29,12 @@ docker run --rm -p 7860:7860 soccer-xg
    pip install huggingface_hub
    huggingface-cli login                      # paste a write token from hf.co/settings/tokens
    git remote add space https://huggingface.co/spaces/<user>/soccer-xg
-   git push space main
+   ./scripts/deploy-hf.sh                      # prepends HF config header, force-pushes to the Space
    ```
 
-   (If the Space was created with an initial commit, use
-   `git push space main --force` for the first push.)
+   The script requires a clean working tree; it force-pushes the
+   frontmatter-prefixed README to the Space and leaves your local `main`
+   untouched.
 
 3. The Space builds the image and goes live at
    `https://huggingface.co/spaces/<user>/soccer-xg`. First build takes a few
