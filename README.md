@@ -37,16 +37,7 @@ prediction update live.
 
 ## How it works
 
-```mermaid
-flowchart LR
-    A["StatsBomb 360<br/>freeze frames"] --> B(("GameState<br/>locked schema"))
-    B --> C["9 position-only<br/>features"]
-    C --> D["XGBoost<br/>(served model)"]
-    D --> E["FastAPI<br/>/predict"]
-    B -. "same schema is the<br/>API request body" .-> E
-    E --> F["SVG draggable pitch<br/>live xG"]
-    F -. "builds a GameState" .-> E
-```
+![how it works](reports/how-it-works.png)
 
 The hub is [`GameState`](src/xg/data/schema.py): `shot_xy` plus a list of
 players (each `xy`, `team`, `is_gk`). It is the model input, the API request
@@ -133,6 +124,5 @@ tests/               # schema, features, metrics, scenarios, API
 
 ## Status
 
-Phases 0–8 complete (data → features → baseline → NN → eval → API → frontend →
-deploy), plus the DeepSets stretch. Built as an incremental, one-phase-at-a-time
-project; each phase is a separate commit.
+Complete end to end: data → features → baseline → NN → eval → API → frontend →
+deploy, plus the DeepSets stretch.
