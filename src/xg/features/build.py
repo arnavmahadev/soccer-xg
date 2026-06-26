@@ -37,6 +37,29 @@ FEATURE_NAMES: list[str] = [
     "gk_dist_to_shot",     # keeper distance from the shooter
 ]
 
+# Football-sense direction each feature must push xG, enforced as XGBoost
+# monotone constraints (+1 raises xG with the feature, -1 lowers it, 0 = free).
+# These encode physics the data alone can't teach: trees can't extrapolate, and
+# the training set has almost no keeper-stranded-out-of-net shots, so without
+# these an "open goal" (large gk_dist_*) scores LOWER than a guarded one. The
+# constraints guarantee that can never happen — a more open net never hurts xG.
+FEATURE_MONOTONE: dict[str, int] = {
+    "distance": -1,           # further out -> harder
+    "angle": +1,              # more goal to see -> easier
+    "abs_y_offset": -1,       # further off-centre -> harder
+    "n_defenders": -1,        # more bodies around -> harder
+    "defenders_in_cone": -1,  # more bodies blocking the shot -> harder
+    "nearest_def_dist": +1,   # nearest defender further away -> easier
+    "gk_visible": 0,          # presence flag — direction is ambiguous
+    "gk_dist_to_goal": +1,    # keeper off his line -> more open net -> easier
+    "gk_dist_to_shot": +1,    # keeper further from the ball -> easier
+}
+
+
+def monotone_constraints() -> tuple[int, ...]:
+    """Constraint tuple aligned to FEATURE_NAMES, for XGBoost's monotone_constraints."""
+    return tuple(FEATURE_MONOTONE[name] for name in FEATURE_NAMES)
+
 _FAR = float(math.hypot(PITCH_LENGTH, PITCH_WIDTH))  # ~144, used as "no one nearby"
 _PROCESSED = Path(__file__).resolve().parents[3] / "data" / "processed"
 

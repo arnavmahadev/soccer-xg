@@ -29,6 +29,7 @@ from xg.eval.metrics import summary
 from xg.features.build import (
     FEATURE_NAMES,
     build_dataset,
+    monotone_constraints,
     state_to_features,
     test_mask_by_match,
 )
@@ -52,7 +53,9 @@ def _make_models() -> dict:
             LogisticRegression(max_iter=1000),
         ),
         # Modest depth/estimators: ~2k samples, we want calibrated probabilities,
-        # not an overfit tree.
+        # not an overfit tree. Monotone constraints bake in football direction
+        # (e.g. a more open net never lowers xG) and fix extrapolation where the
+        # data is thin — see FEATURE_MONOTONE.
         "xgboost": XGBClassifier(
             n_estimators=200,
             max_depth=3,
@@ -60,6 +63,7 @@ def _make_models() -> dict:
             subsample=0.8,
             colsample_bytree=0.8,
             eval_metric="logloss",
+            monotone_constraints=monotone_constraints(),
             random_state=42,
         ),
     }
