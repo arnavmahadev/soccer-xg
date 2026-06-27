@@ -1,9 +1,9 @@
-# Soccer xG
+# SoccerBoard
 
 > Predict the probability a shot becomes a goal — from **player positions alone** —
 > and explore it by dragging players around a live 2D pitch.
 
-**▶ Live demo: https://arnavmahadev-soccer-xg.hf.space**
+**▶ Live demo: https://arnavmahadev-soccerboard.hf.space**
 
 ![demo](reports/demo.png)
 
@@ -22,7 +22,7 @@ StatsBomb 360  →  GameState  →  9 geometric features  →  model  →  FastA
 
 ## Try it
 
-Open the [live demo](https://arnavmahadev-soccer-xg.hf.space) and:
+Open the [live demo](https://arnavmahadev-soccerboard.hf.space) and:
 
 - **Drag the ball** closer to goal or out to the wing — watch xG rise and fall
   with distance and angle.

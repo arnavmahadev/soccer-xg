@@ -12,8 +12,8 @@ prepends it only for the Space push (see **Deploy** below).
 ## Local check (optional, needs Docker running)
 
 ```bash
-docker build -t soccer-xg .
-docker run --rm -p 7860:7860 soccer-xg
+docker build -t soccerboard .
+docker run --rm -p 7860:7860 soccerboard
 # open http://localhost:7860
 ```
 
@@ -21,14 +21,14 @@ docker run --rm -p 7860:7860 soccer-xg
 
 1. Create a Space at https://huggingface.co/new-space
    - **SDK: Docker** (blank template)
-   - note the repo URL: `https://huggingface.co/spaces/<user>/soccer-xg`
+   - note the repo URL: `https://huggingface.co/spaces/<user>/SoccerBoard`
 
 2. Push this repo to the Space:
 
    ```bash
    pip install huggingface_hub
    huggingface-cli login                      # paste a write token from hf.co/settings/tokens
-   git remote add space https://huggingface.co/spaces/<user>/soccer-xg
+   git remote add space https://huggingface.co/spaces/<user>/SoccerBoard
    ./scripts/deploy-hf.sh                      # prepends HF config header, force-pushes to the Space
    ```
 
@@ -37,7 +37,7 @@ docker run --rm -p 7860:7860 soccer-xg
    untouched.
 
 3. The Space builds the image and goes live at
-   `https://huggingface.co/spaces/<user>/soccer-xg`. First build takes a few
+   `https://huggingface.co/spaces/<user>/SoccerBoard`. First build takes a few
    minutes; subsequent pushes rebuild automatically.
 
 ## Notes

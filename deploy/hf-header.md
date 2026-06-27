@@ -1,5 +1,5 @@
 ---
-title: Soccer xG
+title: SoccerBoard
 emoji: ⚽
 colorFrom: green
 colorTo: blue

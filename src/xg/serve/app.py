@@ -33,7 +33,7 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="Soccer xG", version="0.1.0", lifespan=lifespan)
+app = FastAPI(title="SoccerBoard", version="0.1.0", lifespan=lifespan)
 
 # Open CORS so the static frontend (Phase 7) can call the API from the browser.
 app.add_middleware(

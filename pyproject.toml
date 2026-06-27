@@ -1,5 +1,5 @@
 [project]
-name = "soccer-xg"
+name = "soccerboard"
 version = "0.0.1"
 description = "Expected-goals model on StatsBomb 360 freeze frames, served as an interactive draggable pitch."
 requires-python = ">=3.11"
