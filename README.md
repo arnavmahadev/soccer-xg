@@ -111,13 +111,127 @@ Penalties are special-cased to the canonical **0.76** at serve time (an
 out-of-band `shot_type` hint), which keeps the `GameState` contract
 positions-only. Full numbers in [reports/evaluation.md](reports/evaluation.md).
 
+## Forecaster — competition prediction (second mode)
+
+SoccerBoard has a second mode: a **competition forecaster** that predicts the
+**2026 World Cup**. It shares the data layer, FastAPI backend, frontend shell and
+deployment with the xG engine, but demonstrates a different ML toolkit —
+**probabilistic scoreline modeling, Monte Carlo tournament simulation, and
+forecast calibration/backtesting.** (Open the live demo → **Forecaster** tab.)
+
+### What it does
+
+- **Match predictor** — pick any two of the 48 teams; get W/D/L probabilities, a
+  goal-matrix heatmap, and the expected scoreline.
+- **Live tournament forecast** — Monte Carlo (10k sims) over the *remaining*
+  bracket, seeded with the teams that actually qualified. Title and round-by-round
+  odds that **update as knockout games are played**.
+- **Group-stage forecast** — pre-tournament P(win group) / P(advance) for every
+  team next to the actual tables, plus a prediction for each of the 72 group
+  matches against its real result.
+- **Calibration panel** — held-out backtest: log loss, Brier, a reliability curve
+  and ECE, with a naive baseline for context.
+
+### Scoreline model: Dixon-Coles
+
+A bivariate-Poisson model. Each team has an **attack** and **defense** strength;
+a global **home-advantage** term; and the Dixon-Coles **`rho`** low-score
+correction (independent Poissons misprice 0-0 / 1-0 / 0-1 / 1-1). For a fixture:
+
+```
+lambda(home) = exp(attack_home − defense_away + home_adv·[not neutral])
+mu(away)     = exp(attack_away − defense_home)
+```
+
+The goal matrix P(home = i, away = j) gives W/D/L and the expected scoreline.
+Modeling choices (documented in code):
+
+- **Neutral-aware home advantage** — applied only on non-neutral venues (via the
+  dataset's `neutral` flag), so World Cup games are neutral except the hosts'.
+  Fitted home advantage ≈ **0.23**.
+- **Time decay** (`xi`, per year) down-weights old matches; **importance weights**
+  down-weight friendlies vs. qualifiers / tournament games. Both configurable.
+- **Ridge** shrinkage stabilises teams with few recent matches.
+- Weighted MLE (scipy L-BFGS-B) with an **analytic gradient** (≈0.5s for ~600
+  parameters; ~100× faster than finite differences). Identifiability via
+  mean-centred attack.
+
+Data: **[martj42/international_results](https://github.com/martj42/international_results)**
+— ~49k international matches, every nation appearing hundreds of times (far richer
+than a single 64-match tournament). Fetched live with a committed snapshot
+fallback; team names normalised in one place.
+
+### Backtest (the honest part)
+
+Train on every international match before a cutoff, score matches after:
+
+| model | log loss | Brier | ECE | accuracy |
+|---|---|---|---|---|
+| **Dixon-Coles** | **0.858** | **0.502** | **0.023** | **60.0%** |
+| base-rate baseline | 1.053 | 0.635 | — | 47.5% |
+
+2,546 held-out matches (Jan 2024 → Jun 2026). ECE **0.023** means a predicted 60%
+really happens ~60% of the time.
+
+### Pluggable format layer (the architecture)
+
+The scoreline model is competition-agnostic; what differs is the **format**. A
+small interface separates them, and a generic Monte Carlo driver calls
+`simulate_once` N times and counts outcomes — it knows nothing about groups or
+brackets:
+
+```python
+class CompetitionFormat(Protocol):
+    def stages(self) -> list[str]: ...
+    def simulate_once(self, sampler, rng) -> dict[str, str]: ...   # team -> furthest stage
+```
+
+- **WorldCupFormat** — fully implemented for the **2026 48-team format**: 12
+  groups → top 2 of each + 8 best third-placed teams → Round of 32 → … → Final.
+  Group tiebreakers (points → goal difference → goals scored), knockout draws
+  (win-probability-weighted shootout) and venue handling are all documented.
+- **LeagueFormat**, **ChampionsLeagueFormat** — documented stubs
+  (`NotImplementedError` + TODO). Roadmap: **league next** (simplest; final-table
+  probabilities from a partial season), **then Champions League** (two-legged
+  ties, extra time, penalties). Adding either requires **no change** to the
+  scoreline model, the Monte Carlo driver, the API, or the frontend rendering.
+
+The 2026 bracket is **validated against the live schedule**: the 48-team field and
+12 groups are extracted from the actual fixtures, and the Round-of-32 pairings
+matched the official schedule by team *and* date.
+
+### Live / as-of design
+
+A live in-progress forecaster is driven by an **as-of clock**: the server uses
+only results dated ≤ now, re-derives which knockout games are settled, and
+re-simulates the rest. Group results decide *who* advanced; team strengths stay
+**frozen at the pre-tournament fit** (never bumped by tournament games). As games
+finish, the forecast moves.
+
+### Endpoints
+
+`/forecaster/competitions`, `/forecaster/teams`, `POST /forecaster/match`,
+`/forecaster/simulation`, `/forecaster/groups`, `/forecaster/group-matches`,
+`/forecaster/metrics` — all competition-parameterized.
+
+### Retrain / re-simulate
+
+```bash
+python -m forecaster.build_artifacts   # fetch results, fit, group forecast, backtest, snapshot
+python -m forecaster.evaluate          # backtest + calibration only
+```
+
+Committed artifacts (params, competition config, group forecast, metrics, results
+snapshot) make startup fast and offline, exactly like the xG model. The live
+knockout simulation is recomputed per request, not committed.
+
 ## Run it locally
 
 ```bash
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 
-uvicorn xg.serve.app:app --reload   # serves the committed model + UI
+uvicorn xg.serve.app:app --reload   # serves both modes (xG + Forecaster) + UI
 # → http://127.0.0.1:8000   (API docs at /docs)
 ```
 
@@ -153,10 +267,22 @@ src/xg/
   models/deepsets.py  # permutation-invariant net over raw player sets
   models/predictor.py # lightweight serving (xgboost + numpy only)
   eval/metrics.py     # log loss, Brier, calibration / ECE
-  serve/app.py        # FastAPI: /predict, /health + static frontend
-frontend/             # SVG draggable pitch (vanilla JS)
+  serve/app.py        # FastAPI: xG routes + /forecaster/* routes + static frontend
+src/forecaster/
+  data.py             # match-results loader, team normalization, as-of clock
+  dixon_coles.py      # scoreline model: fit / predict / goal matrix (analytic grad)
+  evaluate.py         # backtest: log loss, Brier, calibration curve, baseline
+  predictor.py        # serving layer (numpy-only): match / simulation / groups
+  build_wc2026.py     # derive + validate the 2026 competition config from fixtures
+  build_artifacts.py  # fit + write all committed artifacts
+  formats/base.py     # CompetitionFormat interface + Monte Carlo driver
+  formats/world_cup.py        # 48-team World Cup — fully implemented
+  formats/league.py           # documented stub (second target)
+  formats/champions_league.py # documented stub (third target)
+  artifacts/          # committed params, config, group forecast, metrics, snapshot
+frontend/             # SVG pitch + forecaster views (vanilla JS, shared theme)
 notebooks/            # EDA only
-tests/                # schema, features, metrics, scenarios, API
+tests/                # schema, features, metrics, scenarios, API, forecaster
 ```
 
 ## What's next
